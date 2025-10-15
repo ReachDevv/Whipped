@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>whipped</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <!-- Particle Background -->
+    <canvas id="particles"></canvas>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor" id="customCursor"></div>
+
+    <!-- Browser Chrome -->
+    <div class="browser-chrome">
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="tabs-container" id="tabsContainer">
+                <!-- Tabs will be dynamically added here -->
+            </div>
+            <button class="new-tab-btn" id="newTabBtn" title="new tab">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <div class="nav-controls">
+                <button class="nav-btn" id="backBtn" title="back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="nav-btn" id="forwardBtn" title="forward">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="nav-btn" id="refreshBtn" title="refresh">
+                    <i class="fas fa-arrows-rotate"></i>
+                </button>
+            </div>
+
+            <div class="address-bar">
+                <i class="fas fa-lock address-icon"></i>
+                <input type="text" id="addressInput" placeholder="search or enter address..." autocomplete="off">
+                <button class="search-btn" id="searchBtn">
+                    <i class="fas fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <div class="browser-controls">
+                <button class="control-btn" id="tabCloakerBtn" title="tab cloaker">
+                    <i class="fas fa-mask"></i>
+                </button>
+                <button class="control-btn" id="bookmarkBtn" title="bookmark">
+                    <i class="fas fa-bookmark"></i>
+                </button>
+                <button class="control-btn" id="aiBtn" title="whipgpt">
+                    <i class="fas fa-brain"></i>
+                </button>
+                <button class="control-btn" id="extensionsBtn" title="extensions">
+                    <i class="fas fa-puzzle-piece"></i>
+                </button>
+                <button class="control-btn" id="settingsBtn" title="settings">
+                    <i class="fas fa-gear"></i>
+                </button>
+                <button class="control-btn" id="profileBtn" title="profile">
+                    <i class="fas fa-user"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-area" id="contentArea">
+        <!-- Dynamic content will be loaded here -->
+    </div>
+
+    <!-- Tab Cloaker Modal -->
+    <div class="modal" id="tabCloakerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-mask"></i> tab cloaker</h2>
+                <button class="close-modal" id="closeTabCloaker">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="cloaker-options">
+                    <div class="cloaker-card" onclick="applyTabCloak('google-drive')">
+                        <i class="fab fa-google-drive"></i>
+                        <span>google drive</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('canvas')">
+                        <i class="fas fa-chalkboard"></i>
+                        <span>canvas</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('google')">
+                        <i class="fab fa-google"></i>
+                        <span>google</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('youtube')">
+                        <i class="fab fa-youtube"></i>
+                        <span>youtube</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('spotify')">
+                        <i class="fab fa-spotify"></i>
+                        <span>spotify</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('netflix')">
+                        <i class="fab fa-netflix"></i>
+                        <span>netflix</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('discord')">
+                        <i class="fab fa-discord"></i>
+                        <span>discord</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('github')">
+                        <i class="fab fa-github"></i>
+                        <span>github</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('wikipedia')">
+                        <i class="fab fa-wikipedia-w"></i>
+                        <span>wikipedia</span>
+                    </div>
+                    <div class="cloaker-card" onclick="applyTabCloak('microsoft')">
+                        <i class="fab fa-microsoft"></i>
+                        <span>microsoft office</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhipGPT Modal -->
+    <div class="modal" id="whipgptModal">
+        <div class="modal-content whipgpt-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-brain"></i> whipgpt</h2>
+                <button class="close-modal" id="closeWhipGPT">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="chat-container" id="chatContainer">
+                    <div class="chat-welcome">
+                        <i class="fas fa-brain chat-icon"></i>
+                        <h3>hello! i'm whipgpt</h3>
+                        <p>how can i assist you today?</p>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" placeholder="ask me anything..." autocomplete="off">
+                    <button id="sendChatBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user"></i> profiles</h2>
+                <button class="close-modal" id="closeProfile">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="profiles-list" id="profilesList">
+                    <!-- Profiles will be loaded here -->
+                </div>
+                <button class="btn-primary" id="addProfileBtn">
+                    <i class="fas fa-plus"></i> add profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookmark Modal -->
+    <div class="modal" id="bookmarkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bookmark"></i> add bookmark</h2>
+                <button class="close-modal" id="closeBookmark">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>title</label>
+                    <input type="text" id="bookmarkTitle" placeholder="bookmark title">
+                </div>
+                <div class="form-group">
+                    <label>url</label>
+                    <input type="text" id="bookmarkUrl" placeholder="https://example.com">
+                </div>
+                <button class="btn-primary" id="saveBookmarkBtn">
+                    <i class="fas fa-floppy-disk"></i> save bookmark
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extensions Modal -->
+    <div class="modal" id="extensionsModal">
+        <div class="modal-content extensions-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-puzzle-piece"></i> extensions store</h2>
+                <button class="close-modal" id="closeExtensions">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="extensions-store">
+                    <div class="store-categories">
+                        <button class="category-btn active" data-category="all">all</button>
+                        <button class="category-btn" data-category="productivity">productivity</button>
+                        <button class="category-btn" data-category="privacy">privacy</button>
+                        <button class="category-btn" data-category="themes">themes</button>
+                        <button class="category-btn" data-category="fun">fun</button>
+                    </div>
+                    <div class="store-search">
+                        <input type="text" id="storeSearch" placeholder="search extensions...">
+                    </div>
+                    <div class="extensions-grid" id="extensionsStoreGrid">
+                        <!-- Extensions will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Changer Modal -->
+    <div class="modal" id="themeChangerModal">
+        <div class="modal-content theme-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-palette"></i> theme changer</h2>
+                <button class="close-modal" id="closeThemeChanger">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="theme-grid">
+                    <div class="theme-card" data-theme="lavender" onclick="applyTheme('lavender')">
+                        <div class="theme-preview lavender"></div>
+                        <span>lavender</span>
+                    </div>
+                    <div class="theme-card" data-theme="ocean" onclick="applyTheme('ocean')">
+                        <div class="theme-preview ocean"></div>
+                        <span>ocean</span>
+                    </div>
+                    <div class="theme-card" data-theme="sunset" onclick="applyTheme('sunset')">
+                        <div class="theme-preview sunset"></div>
+                        <span>sunset</span>
+                    </div>
+                    <div class="theme-card" data-theme="forest" onclick="applyTheme('forest')">
+                        <div class="theme-preview forest"></div>
+                        <span>forest</span>
+                    </div>
+                    <div class="theme-card" data-theme="midnight" onclick="applyTheme('midnight')">
+                        <div class="theme-preview midnight"></div>
+                        <span>midnight</span>
+                    </div>
+                    <div class="theme-card" data-theme="neon" onclick="applyTheme('neon')">
+                        <div class="theme-preview neon"></div>
+                        <span>neon</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Cursor Modal -->
+    <div class="modal" id="cursorModal">
+        <div class="modal-content cursor-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-mouse"></i> custom cursors</h2>
+                <button class="close-modal" id="closeCursor">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="cursor-grid">
+                    <div class="cursor-option" data-cursor="default" onclick="setCursor('default')">
+                        <div class="cursor-preview default"></div>
+                        <span>default</span>
+                    </div>
+                    <div class="cursor-option" data-cursor="glow" onclick="setCursor('glow')">
+                        <div class="cursor-preview glow"></div>
+                        <span>glow</span>
+                    </div>
+                    <div class="cursor-option" data-cursor="rainbow" onclick="setCursor('rainbow')">
+                        <div class="cursor-preview rainbow"></div>
+                        <span>rainbow</span>
+                    </div>
+                    <div class="cursor-option" data-cursor="trail" onclick="setCursor('trail')">
+                        <div class="cursor-preview trail"></div>
+                        <span>trail</span>
+                    </div>
+                    <div class="cursor-option" data-cursor="heart" onclick="setCursor('heart')">
+                        <div class="cursor-preview heart"></div>
+                        <span>heart</span>
+                    </div>
+                    <div class="cursor-option" data-cursor="star" onclick="setCursor('star')">
+                        <div class="cursor-preview star"></div>
+                        <span>star</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 404 Page -->
+    <div class="page-content not-found-page" id="notFoundPage" style="display: none;">
+        <div class="not-found-content">
+            <div class="not-found-icon">
+                <i class="fas fa-ghost"></i>
+            </div>
+            <h1>404</h1>
+            <h2>page not found</h2>
+            <p>the page you're looking for doesn't exist</p>
+            <div class="not-found-actions">
+                <button class="btn-primary" onclick="createNewTab()">
+                    <i class="fas fa-home"></i> go home
+                </button>
+                <button class="btn-secondary" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i> go back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
