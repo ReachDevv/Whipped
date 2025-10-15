@@ -7,8 +7,14 @@
 const CONFIG = {
     GEMINI_API_KEY: 'AIzaSyBp6HAwIqUbNeG8GzCFBX7utifsaTrrnk4',
     GEMINI_API_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-    DEFAULT_SEARCH_ENGINE: 'https://www.google.com/search?q=',
-    PROXY_ENABLED: true
+    SEARCH_ENGINES: {
+        google: 'https://www.google.com/search?q=',
+        bing: 'https://www.bing.com/search?q=',
+        duckduckgo: 'https://duckduckgo.com/?q=',
+        ecosia: 'https://www.ecosia.org/search?q='
+    },
+    // Scramjet Proxy Configuration
+    SCRAMJET_PROXY: 'https://scramjet.mercurywork.shop/' // Official public Scramjet instance
 };
 
 // State Management
@@ -20,6 +26,13 @@ const state = {
     history: [],
     extensions: [],
     installedExtensions: [],
+    tabHistory: [],
+    tabHistoryIndex: -1,
+    profiles: [
+        { id: 'default', name: 'Default', type: 'normal', isIncognito: false },
+        { id: 'work', name: 'Work', type: 'normal', isIncognito: false },
+        { id: 'incognito', name: 'Incognito', type: 'incognito', isIncognito: true }
+    ],
     settings: {
         theme: 'lavender',
         particles: true,
@@ -28,25 +41,26 @@ const state = {
         startupPage: 'whipped://newtab',
         cursor: 'default',
         adBlocker: true,
-        tabCloaker: null
+        tabCloaker: null,
+        useScramjetProxy: true
     },
     tabCloaks: {
-        'google-drive': { title: 'google drive', favicon: 'https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_3.ico' },
-        'canvas': { title: 'canvas', favicon: 'https://instructure-uploads.s3.amazonaws.com/account_108120000000000001/attachments/503/favicon.ico' },
-        'google': { title: 'google', favicon: 'https://www.google.com/favicon.ico' },
-        'youtube': { title: 'youtube', favicon: 'https://www.youtube.com/favicon.ico' },
-        'spotify': { title: 'spotify', favicon: 'https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png' },
-        'netflix': { title: 'netflix', favicon: 'https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico' },
-        'discord': { title: 'discord', favicon: 'https://discord.com/assets/favicon.ico' },
-        'github': { title: 'github', favicon: 'https://github.com/favicon.ico' },
-        'wikipedia': { title: 'wikipedia', favicon: 'https://en.wikipedia.org/static/favicon/wikipedia.ico' },
-        'microsoft': { title: 'microsoft office', favicon: 'https://www.office.com/favicon.ico' }
+        'google-drive': { title: 'Google Drive', favicon: 'https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_3.ico' },
+        'canvas': { title: 'Canvas', favicon: 'https://instructure-uploads.s3.amazonaws.com/account_108120000000000001/attachments/503/favicon.ico' },
+        'google': { title: 'Google', favicon: 'https://www.google.com/favicon.ico' },
+        'youtube': { title: 'YouTube', favicon: 'https://www.youtube.com/favicon.ico' },
+        'spotify': { title: 'Spotify', favicon: 'https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png' },
+        'netflix': { title: 'Netflix', favicon: 'https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico' },
+        'discord': { title: 'Discord', favicon: 'https://discord.com/assets/favicon.ico' },
+        'github': { title: 'GitHub', favicon: 'https://github.com/favicon.ico' },
+        'wikipedia': { title: 'Wikipedia', favicon: 'https://en.wikipedia.org/static/favicon/wikipedia.ico' },
+        'microsoft': { title: 'Microsoft Office', favicon: 'https://www.office.com/favicon.ico' }
     },
     extensionStore: [
         {
             id: 'adblocker',
-            name: 'adblocker pro',
-            description: 'blocks all ads and trackers for a cleaner browsing experience',
+            name: 'AdBlocker Pro',
+            description: 'Blocks all ads and trackers for a cleaner browsing experience',
             icon: 'fas fa-shield-alt',
             category: 'privacy',
             version: '2.1.0',
@@ -55,8 +69,8 @@ const state = {
         },
         {
             id: 'theme-changer',
-            name: 'theme changer',
-            description: 'beautiful themes for your browser with live preview',
+            name: 'Theme Changer',
+            description: 'Beautiful themes for your browser with live preview',
             icon: 'fas fa-palette',
             category: 'themes',
             version: '1.5.0',
@@ -65,8 +79,8 @@ const state = {
         },
         {
             id: 'custom-cursors',
-            name: 'custom cursors',
-            description: 'fun and unique cursors that follow your mouse',
+            name: 'Custom Cursors',
+            description: 'Fun and unique cursors that follow your mouse',
             icon: 'fas fa-mouse',
             category: 'fun',
             version: '1.3.0',
@@ -75,8 +89,8 @@ const state = {
         },
         {
             id: 'tab-cloaker',
-            name: 'tab cloaker',
-            description: 'disguise your tabs as educational sites',
+            name: 'Tab Cloaker',
+            description: 'Disguise your tabs as educational sites',
             icon: 'fas fa-mask',
             category: 'productivity',
             version: '1.2.0',
@@ -85,8 +99,8 @@ const state = {
         },
         {
             id: 'night-mode',
-            name: 'night mode',
-            description: 'automatic dark mode for all websites',
+            name: 'Night Mode',
+            description: 'Automatic dark mode for all websites',
             icon: 'fas fa-moon',
             category: 'themes',
             version: '1.4.0',
@@ -95,8 +109,8 @@ const state = {
         },
         {
             id: 'speed-boost',
-            name: 'speed boost',
-            description: 'optimize page loading speed by 300%',
+            name: 'Speed Boost',
+            description: 'Optimize page loading speed by 300%',
             icon: 'fas fa-rocket',
             category: 'productivity',
             version: '1.1.0',
@@ -105,8 +119,8 @@ const state = {
         },
         {
             id: 'video-downloader',
-            name: 'video downloader',
-            description: 'download videos from any website',
+            name: 'Video Downloader',
+            description: 'Download videos from any website',
             icon: 'fas fa-download',
             category: 'productivity',
             version: '1.6.0',
@@ -115,8 +129,8 @@ const state = {
         },
         {
             id: 'password-manager',
-            name: 'password manager',
-            description: 'secure password storage and autofill',
+            name: 'Password Manager',
+            description: 'Secure password storage and autofill',
             icon: 'fas fa-key',
             category: 'privacy',
             version: '2.0.0',
@@ -125,8 +139,8 @@ const state = {
         },
         {
             id: 'grammar-check',
-            name: 'grammar check',
-            description: 'ai-powered grammar and spell checking',
+            name: 'Grammar Check',
+            description: 'AI-powered grammar and spell checking',
             icon: 'fas fa-spell-check',
             category: 'productivity',
             version: '1.7.0',
@@ -135,8 +149,8 @@ const state = {
         },
         {
             id: 'emoji-picker',
-            name: 'emoji picker',
-            description: 'quick access to 3000+ emojis',
+            name: 'Emoji Picker',
+            description: 'Quick access to 3000+ emojis',
             icon: 'fas fa-smile',
             category: 'fun',
             version: '1.2.0',
@@ -145,8 +159,8 @@ const state = {
         },
         {
             id: 'screen-recorder',
-            name: 'screen recorder',
-            description: 'record your screen with audio',
+            name: 'Screen Recorder',
+            description: 'Record your screen with audio',
             icon: 'fas fa-video',
             category: 'productivity',
             version: '1.3.0',
@@ -155,8 +169,8 @@ const state = {
         },
         {
             id: 'vpn-proxy',
-            name: 'vpn proxy',
-            description: 'free vpn with 50+ server locations',
+            name: 'VPN Proxy',
+            description: 'Free VPN with 50+ server locations',
             icon: 'fas fa-globe',
             category: 'privacy',
             version: '1.8.0',
@@ -167,7 +181,7 @@ const state = {
 };
 
 // ===================================
-// INITIALIZATION - ULTRA EDITION
+// INITIALIZATION
 // ===================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -220,11 +234,6 @@ function initializeCustomCursor() {
 
 function setCursor(type) {
     const cursor = document.getElementById('customCursor');
-    cursor.className = `custom-cursor ${type}`;
-    state.settings.cursor = type;
-    saveSettings();
-    
-    // Update cursor appearance
     const cursors = {
         default: '',
         glow: 'glow',
@@ -235,10 +244,12 @@ function setCursor(type) {
     };
     
     cursor.className = `custom-cursor ${cursors[type] || ''}`;
+    state.settings.cursor = type;
+    saveSettings();
 }
 
 // ===================================
-// THEME SYSTEM - DYNAMIC
+// THEME SYSTEM
 // ===================================
 
 function initializeThemeSystem() {
@@ -250,50 +261,13 @@ function applyTheme(theme) {
     state.settings.theme = theme;
     saveSettings();
     
-    // Update CSS variables based on theme
     const themes = {
-        lavender: {
-            bg: '#E6E6FA',
-            light: '#D8BFD8',
-            medium: '#B19CD9',
-            dark: '#9370DB',
-            darker: '#7B68EE'
-        },
-        ocean: {
-            bg: '#B8E6FF',
-            light: '#87CEEB',
-            medium: '#4682B4',
-            dark: '#2E5984',
-            darker: '#1E3A5F'
-        },
-        sunset: {
-            bg: '#FFB6C1',
-            light: '#FFA07A',
-            medium: '#FF6347',
-            dark: '#DC143C',
-            darker: '#B22222'
-        },
-        forest: {
-            bg: '#98FB98',
-            light: '#90EE90',
-            medium: '#228B22',
-            dark: '#006400',
-            darker: '#004000'
-        },
-        midnight: {
-            bg: '#191970',
-            light: '#483D8B',
-            medium: '#2F4F4F',
-            dark: '#000080',
-            darker: '#000040'
-        },
-        neon: {
-            bg: '#000000',
-            light: '#FF00FF',
-            medium: '#00FFFF',
-            dark: '#00FF00',
-            darker: '#FF00FF'
-        }
+        lavender: { bg: '#E6E6FA', light: '#D8BFD8', medium: '#B19CD9', dark: '#9370DB', darker: '#7B68EE' },
+        ocean: { bg: '#B8E6FF', light: '#87CEEB', medium: '#4682B4', dark: '#2E5984', darker: '#1E3A5F' },
+        sunset: { bg: '#FFB6C1', light: '#FFA07A', medium: '#FF6347', dark: '#DC143C', darker: '#B22222' },
+        forest: { bg: '#98FB98', light: '#90EE90', medium: '#228B22', dark: '#006400', darker: '#004000' },
+        midnight: { bg: '#191970', light: '#483D8B', medium: '#2F4F4F', dark: '#000080', darker: '#000040' },
+        neon: { bg: '#000000', light: '#FF00FF', medium: '#00FFFF', dark: '#00FF00', darker: '#FF00FF' }
     };
     
     const themeColors = themes[theme] || themes.lavender;
@@ -305,7 +279,7 @@ function applyTheme(theme) {
 }
 
 // ===================================
-// PARTICLE SYSTEM - ENHANCED
+// PARTICLE SYSTEM
 // ===================================
 
 function initializeParticles() {
@@ -333,15 +307,9 @@ function initializeParticles() {
             this.x += this.speedX;
             this.y += this.speedY;
             
-            if (this.x > canvas.width) {
-                this.x = 0;
-            }
-            if (this.y > canvas.height) {
-                this.y = 0;
-            }
-            if (this.y < 0) {
-                this.y = canvas.height;
-            }
+            if (this.x > canvas.width) this.x = 0;
+            if (this.y > canvas.height) this.y = 0;
+            if (this.y < 0) this.y = canvas.height;
         }
         
         draw() {
@@ -378,12 +346,11 @@ function initializeParticles() {
 }
 
 // ===================================
-// AD BLOCKER - ADVANCED
+// AD BLOCKER
 // ===================================
 
 function initializeAdBlocker() {
     if (state.settings.adBlocker) {
-        // Inject ad blocking CSS
         const style = document.createElement('style');
         style.textContent = `
             iframe[src*="doubleclick"],
@@ -404,10 +371,12 @@ function initializeAdBlocker() {
 }
 
 // ===================================
-// TAB MANAGEMENT - ENHANCED
+// TAB MANAGEMENT
 // ===================================
 
-function createNewTab(url = 'whipped://newtab') {
+function createNewTab(url = null) {
+    if (!url) url = state.settings.startupPage;
+    
     const tabId = `tab-${Date.now()}`;
     const tab = {
         id: tabId,
@@ -415,12 +384,12 @@ function createNewTab(url = 'whipped://newtab') {
         title: 'new tab',
         favicon: 'fa-globe',
         active: true,
-        cloaked: false
+        cloaked: false,
+        history: [url],
+        historyIndex: 0
     };
     
-    // Deactivate all other tabs
     state.tabs.forEach(t => t.active = false);
-    
     state.tabs.push(tab);
     state.activeTabId = tabId;
     
@@ -468,7 +437,7 @@ function renderTabs() {
         
         let faviconHtml = '<i class="fas fa-globe tab-favicon"></i>';
         if (tab.cloaked && state.tabCloaks[state.settings.tabCloaker]) {
-            faviconHtml = `<img src="${state.tabCloaks[state.settings.tabCloaker].favicon}" class="tab-favicon" style="width: 14px; height: 14px;">`;
+            faviconHtml = `<img src="${state.tabCloaks[state.settings.tabCloaker].favicon}" class="tab-favicon" style="width: 16px; height: 16px;">`;
         }
         
         tabElement.innerHTML = `
@@ -496,7 +465,7 @@ function renderTabs() {
 }
 
 // ===================================
-// TAB CLOAKER - ADVANCED
+// TAB CLOAKER
 // ===================================
 
 function applyTabCloak(cloakType) {
@@ -506,18 +475,13 @@ function applyTabCloak(cloakType) {
         activeTab.title = state.tabCloaks[cloakType].title;
         state.settings.tabCloaker = cloakType;
         
-        // Update document title and favicon
         document.title = state.tabCloaks[cloakType].title;
         updateFavicon(state.tabCloaks[cloakType].favicon);
         
         saveSettings();
         renderTabs();
-        
-        // Close modal
         document.getElementById('tabCloakerModal').classList.remove('active');
-        
-        // Show success message
-        showNotification(`tab cloaked as ${cloakType}`, 'success');
+        showNotification(`Tab cloaked as ${cloakType}`, 'success');
     }
 }
 
@@ -530,7 +494,50 @@ function updateFavicon(url) {
 }
 
 // ===================================
-// CONTENT LOADING - ENHANCED
+// NAVIGATION HISTORY
+// ===================================
+
+function goBack() {
+    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+    if (!activeTab) return;
+    
+    if (activeTab.historyIndex > 0) {
+        activeTab.historyIndex--;
+        loadTabContent(activeTab.history[activeTab.historyIndex]);
+    }
+}
+
+function goForward() {
+    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+    if (!activeTab) return;
+    
+    if (activeTab.historyIndex < activeTab.history.length - 1) {
+        activeTab.historyIndex++;
+        loadTabContent(activeTab.history[activeTab.historyIndex]);
+    }
+}
+
+function refreshPage() {
+    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+    if (!activeTab) return;
+    
+    loadTabContent(activeTab.url);
+}
+
+function addToTabHistory(url) {
+    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+    if (!activeTab) return;
+    
+    if (activeTab.historyIndex < activeTab.history.length - 1) {
+        activeTab.history = activeTab.history.slice(0, activeTab.historyIndex + 1);
+    }
+    
+    activeTab.history.push(url);
+    activeTab.historyIndex = activeTab.history.length - 1;
+}
+
+// ===================================
+// CONTENT LOADING
 // ===================================
 
 function loadTabContent(url) {
@@ -538,24 +545,70 @@ function loadTabContent(url) {
     const addressInput = document.getElementById('addressInput');
     addressInput.value = url;
     
-    // Hide 404 page
     document.getElementById('notFoundPage').style.display = 'none';
     
     if (url.startsWith('whipped://')) {
         loadSpecialPage(url);
     } else {
         loadWebPage(url);
+        addToTabHistory(url);
     }
     
-    // Update active tab
     const activeTab = state.tabs.find(t => t.id === state.activeTabId);
     if (activeTab) {
         activeTab.url = url;
     }
     
-    // Add to history (if not incognito)
     if (!state.currentProfile?.isIncognito) {
         addToHistory(url, activeTab?.title || 'untitled');
+    }
+}
+
+// ===================================
+// SCRAMJET PROXY INTEGRATION
+// ===================================
+// 
+// Scramjet is a web proxy that allows accessing blocked/restricted websites
+// by routing all web traffic through the proxy server.
+//
+// How it works:
+// 1. User inputs a URL (e.g., "youtube.com")
+// 2. wrapWithScramjetProxy() encodes it: "https://scramjet.mercurywork.shop/?url=..."
+// 3. The iframe loads the Scramjet proxy page with the target URL
+// 4. Scramjet fetches and proxies the content back to the browser
+//
+// Benefits:
+// - Access restricted/blocked websites
+// - Bypass network filters and firewalls
+// - Improved privacy and anonymity
+// - Support for CAPTCHA and advanced site features
+//
+// Configuration:
+// - Toggle in Settings > Privacy & Proxy > Scramjet Proxy
+// - Setting persists across sessions in localStorage
+// - Can be enabled/disabled without page reload
+//
+
+function wrapWithScramjetProxy(targetUrl) {
+    if (!state.settings.useScramjetProxy) {
+        return targetUrl;
+    }
+    
+    try {
+        // Ensure proper URL format
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            targetUrl = 'https://' + targetUrl;
+        }
+        
+        // Encode the target URL
+        const encodedUrl = encodeURIComponent(targetUrl);
+        
+        // Return Scramjet proxy URL
+        // Scramjet uses ?url= parameter for target URL
+        return `${CONFIG.SCRAMJET_PROXY}?url=${encodedUrl}`;
+    } catch (e) {
+        console.error('Error wrapping URL with Scramjet proxy:', e);
+        return targetUrl;
     }
 }
 
@@ -583,9 +636,6 @@ function loadSpecialPage(url) {
             contentArea.innerHTML = renderHistoryPage();
             setupHistoryListeners();
             break;
-        case 'whipped://404':
-            show404Page();
-            break;
         default:
             show404Page();
     }
@@ -594,25 +644,28 @@ function loadSpecialPage(url) {
 function loadWebPage(url) {
     const contentArea = document.getElementById('contentArea');
     
-    // Ensure URL has protocol
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url;
     }
     
-    // Create iframe for web content with ad blocker
-    const iframeHTML = state.settings.adBlocker ? `
-        <div class="page-content">
-            <iframe src="${url}" style="width: 100%; height: 100%; border: none;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-        </div>
-    ` : `
-        <div class="page-content">
-            <iframe src="${url}" style="width: 100%; height: 100%; border: none;"></iframe>
+    // Wrap URL with Scramjet proxy if enabled
+    const proxiedUrl = wrapWithScramjetProxy(url);
+    
+    // Remove sandbox restrictions when using proxy (proxy provides isolation)
+    // Keep sandbox for direct loading
+    let sandboxAttr = '';
+    if (!state.settings.useScramjetProxy && state.settings.adBlocker) {
+        sandboxAttr = 'sandbox="allow-scripts allow-same-origin allow-forms"';
+    }
+    
+    const iframeHTML = `
+        <div class="page-content iframe-wrapper">
+            <iframe src="${proxiedUrl}" ${sandboxAttr} allow="camera; microphone; geolocation"></iframe>
         </div>
     `;
     
     contentArea.innerHTML = iframeHTML;
     
-    // Update tab title
     const activeTab = state.tabs.find(t => t.id === state.activeTabId);
     if (activeTab) {
         try {
@@ -630,13 +683,23 @@ function show404Page() {
     document.getElementById('contentArea').innerHTML = '';
 }
 
+function goBack() {
+    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+    if (!activeTab) return;
+    
+    if (activeTab.historyIndex > 0) {
+        activeTab.historyIndex--;
+        loadTabContent(activeTab.history[activeTab.historyIndex]);
+    }
+}
+
 // ===================================
-// NEW TAB PAGE - ENHANCED
+// NEW TAB PAGE
 // ===================================
 
 function renderNewTabPage() {
     return `
-        <div class="page-content newtab-page">
+        <div class="newtab-page">
             <div class="newtab-logo">whipped</div>
             <div class="newtab-time" id="newtabTime">00:00:00</div>
             <div class="newtab-date" id="newtabDate">loading...</div>
@@ -677,6 +740,7 @@ function setupNewTabListeners() {
         });
         searchInput.focus();
     }
+    updateClock();
 }
 
 function updateClock() {
@@ -697,387 +761,461 @@ function updateClock() {
             month: 'long', 
             day: 'numeric' 
         });
-        
         timeElement.textContent = time;
         dateElement.textContent = date;
     }
 }
 
 // ===================================
-// SETTINGS PAGE - ENHANCED
+// SEARCH FUNCTIONALITY
+// ===================================
+
+function handleSearch(query) {
+    if (!query) return;
+    
+    const searchEngine = state.settings.searchEngine;
+    const searchUrl = CONFIG.SEARCH_ENGINES[searchEngine] || CONFIG.SEARCH_ENGINES.google;
+    const url = searchUrl + encodeURIComponent(query);
+    
+    loadTabContent(url);
+}
+
+// ===================================
+// BOOKMARKS
+// ===================================
+
+function renderBookmarksPage() {
+    let bookmarksHTML = '<div class="bookmarks-page"><h1>Bookmarks</h1><div class="bookmarks-grid">';
+    
+    state.bookmarks.forEach((bookmark, index) => {
+        bookmarksHTML += `
+            <div class="bookmark-card" onclick="loadTabContent('${bookmark.url}')">
+                <div class="bookmark-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="bookmark-title">${bookmark.title}</div>
+                <div class="bookmark-actions">
+                    <button onclick="event.stopPropagation(); deleteBookmark(${index})">Delete</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    bookmarksHTML += '</div></div>';
+    return bookmarksHTML;
+}
+
+function setupBookmarksListeners() {
+    
+}
+
+function addBookmark(title, url) {
+    state.bookmarks.push({ title, url });
+    saveBookmarks();
+}
+
+function deleteBookmark(index) {
+    state.bookmarks.splice(index, 1);
+    saveBookmarks();
+    loadTabContent('whipped://bookmarks');
+}
+
+// ===================================
+// HISTORY
+// ===================================
+
+function renderHistoryPage() {
+    let historyHTML = '<div class="settings-page"><h1>History</h1><div class="bookmarks-grid">';
+    
+    state.history.reverse().forEach((item, index) => {
+        historyHTML += `
+            <div class="bookmark-card" onclick="loadTabContent('${item.url}')">
+                <div class="bookmark-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="bookmark-title">${item.title}</div>
+            </div>
+        `;
+    });
+    
+    historyHTML += '</div></div>';
+    return historyHTML;
+}
+
+function setupHistoryListeners() {
+    
+}
+
+function addToHistory(url, title) {
+    state.history.push({ url, title, timestamp: Date.now() });
+    saveHistory();
+}
+
+// ===================================
+// SETTINGS PAGE
 // ===================================
 
 function renderSettingsPage() {
     return `
-        <div class="page-content settings-page">
+        <div class="settings-page">
             <div class="settings-header">
-                <h1><i class="fas fa-gear"></i> settings</h1>
+                <h1><i class="fas fa-gear"></i> Settings</h1>
             </div>
             
             <div class="settings-section">
-                <h2><i class="fas fa-palette"></i> appearance</h2>
+                <h2><i class="fas fa-palette"></i> Appearance</h2>
                 <div class="setting-item">
-                    <div>
-                        <div class="setting-label">theme</div>
-                        <div class="setting-description">choose your browser theme</div>
-                    </div>
-                    <button class="btn-secondary" onclick="openThemeChanger()">
-                        <i class="fas fa-palette"></i> change theme
+                    <label class="setting-label">Theme</label>
+                    <button class="btn-primary" onclick="document.getElementById('themeChangerModal').classList.add('active')">
+                        Change Theme
                     </button>
                 </div>
                 <div class="setting-item">
-                    <div>
-                        <div class="setting-label">cursor</div>
-                        <div class="setting-description">custom cursor styles</div>
-                    </div>
-                    <button class="btn-secondary" onclick="openCursorModal()">
-                        <i class="fas fa-mouse"></i> custom cursors
+                    <label class="setting-label">Cursor</label>
+                    <button class="btn-primary" onclick="document.getElementById('cursorModal').classList.add('active')">
+                        Change Cursor
                     </button>
                 </div>
                 <div class="setting-item">
-                    <div>
-                        <div class="setting-label">particles</div>
-                        <div class="setting-description">show animated particles in background</div>
-                    </div>
-                    <div class="toggle-switch ${state.settings.particles ? 'active' : ''}" id="particlesToggle">
-                        <div class="toggle-slider"></div>
+                    <label class="setting-label">Particles</label>
+                    <input type="checkbox" ${state.settings.particles ? 'checked' : ''} onchange="toggleParticles()">
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2><i class="fas fa-search"></i> Search</h2>
+                <div class="setting-item">
+                    <label class="setting-label">Search Engine</label>
+                    <div class="custom-dropdown" id="searchEngineDropdown">
+                        <button class="dropdown-button" onclick="toggleDropdown('searchEngineDropdown')">
+                            ${state.settings.searchEngine}
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-option" onclick="setSearchEngine('google')">Google</div>
+                            <div class="dropdown-option" onclick="setSearchEngine('bing')">Bing</div>
+                            <div class="dropdown-option" onclick="setSearchEngine('duckduckgo')">DuckDuckGo</div>
+                            <div class="dropdown-option" onclick="setSearchEngine('ecosia')">Ecosia</div>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="settings-section">
-                <h2><i class="fas fa-magnifying-glass"></i> search</h2>
+                <h2><i class="fas fa-home"></i> Startup</h2>
                 <div class="setting-item">
-                    <div>
-                        <div class="setting-label">search engine</div>
-                        <div class="setting-description">default search engine</div>
-                    </div>
-                    <select class="setting-select" id="searchEngineSetting">
-                        <option value="google" ${state.settings.searchEngine === 'google' ? 'selected' : ''}>google</option>
-                        <option value="duckduckgo" ${state.settings.searchEngine === 'duckduckgo' ? 'selected' : ''}>duckduckgo</option>
-                        <option value="bing" ${state.settings.searchEngine === 'bing' ? 'selected' : ''}>bing</option>
-                        <option value="yahoo" ${state.settings.searchEngine === 'yahoo' ? 'selected' : ''}>yahoo</option>
-                        <option value="ecosia" ${state.settings.searchEngine === 'ecosia' ? 'selected' : ''}>ecosia</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h2><i class="fas fa-rocket"></i> performance</h2>
-                <div class="setting-item">
-                    <div>
-                        <div class="setting-label">ad blocker</div>
-                        <div class="setting-description">block ads and trackers</div>
-                    </div>
-                    <div class="toggle-switch ${state.settings.adBlocker ? 'active' : ''}" id="adBlockerToggle">
-                        <div class="toggle-slider"></div>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <div>
-                        <div class="setting-label">speed boost</div>
-                        <div class="setting-description">optimize page loading speed</div>
-                    </div>
-                    <div class="toggle-switch active" id="speedBoostToggle">
-                        <div class="toggle-slider"></div>
+                    <label class="setting-label">Startup Page</label>
+                    <div class="custom-dropdown" id="startupPageDropdown">
+                        <button class="dropdown-button" onclick="toggleDropdown('startupPageDropdown')">
+                            ${state.settings.startupPage === 'whipped://newtab' ? 'New Tab' : 'Custom'}
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-option" onclick="setStartupPage('whipped://newtab')">New Tab</div>
+                            <div class="dropdown-option" onclick="setStartupPage('whipped://bookmarks')">Bookmarks</div>
+                            <div class="dropdown-option" onclick="setStartupPage('whipped://newtab')">Default</div>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="settings-section">
-                <h2><i class="fas fa-rocket"></i> startup</h2>
+                <h2><i class="fas fa-shield-alt"></i> Privacy & Proxy</h2>
                 <div class="setting-item">
-                    <div>
-                        <div class="setting-label">startup page</div>
-                        <div class="setting-description">page to show when browser starts</div>
-                    </div>
-                    <select class="setting-select" id="startupPageSetting">
-                        <option value="whipped://newtab" ${state.settings.startupPage === 'whipped://newtab' ? 'selected' : ''}>new tab</option>
-                        <option value="whipped://bookmarks" ${state.settings.startupPage === 'whipped://bookmarks' ? 'selected' : ''}>bookmarks</option>
-                        <option value="whipped://history" ${state.settings.startupPage === 'whipped://history' ? 'selected' : ''}>history</option>
-                        <option value="whipped://extensions" ${state.settings.startupPage === 'whipped://extensions' ? 'selected' : ''}>extensions</option>
-                    </select>
+                    <label class="setting-label">Ad Blocker</label>
+                    <input type="checkbox" ${state.settings.adBlocker ? 'checked' : ''} onchange="toggleAdBlocker()">
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Scramjet Proxy</label>
+                    <input type="checkbox" ${state.settings.useScramjetProxy ? 'checked' : ''} onchange="toggleScramjetProxy()">
+                </div>
+                <div class="setting-item" style="font-size: 0.85rem; color: #999; margin-top: -8px;">
+                    <span>Proxy web traffic through Scramjet for better access to restricted sites</span>
                 </div>
             </div>
             
             <div class="settings-section">
-                <h2><i class="fas fa-shield"></i> privacy</h2>
-                <div class="setting-item">
-                    <div>
-                        <div class="setting-label">clear history</div>
-                        <div class="setting-description">remove all browsing history</div>
-                    </div>
-                    <button class="btn-secondary" id="clearHistoryBtn">
-                        <i class="fas fa-trash"></i> clear
-                    </button>
-                </div>
-                <div class="setting-item">
-                    <div>
-                        <div class="setting-label">clear bookmarks</div>
-                        <div class="setting-description">remove all bookmarks</div>
-                    </div>
-                    <button class="btn-secondary" id="clearBookmarksBtn">
-                        <i class="fas fa-trash"></i> clear
-                    </button>
-                </div>
-                <div class="setting-item">
-                    <div>
-                        <div class="setting-label">clear all data</div>
-                        <div class="setting-description">remove all browser data</div>
-                    </div>
-                    <button class="btn-secondary" id="clearAllBtn">
-                        <i class="fas fa-trash"></i> clear all
-                    </button>
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h2><i class="fas fa-info-circle"></i> about</h2>
-                <div class="setting-item">
-                    <div>
-                        <div class="setting-label">whipped browser</div>
-                        <div class="setting-description">version 2.0 ultra edition</div>
-                    </div>
-                    <span>100+ features</span>
-                </div>
-                <div class="setting-item">
-                    <div>
-                        <div class="setting-label">total extensions</div>
-                        <div class="setting-description">installed extensions</div>
-                    </div>
-                    <span>${state.installedExtensions.length}</span>
-                </div>
+                <h2><i class="fas fa-undo"></i> Reset</h2>
+                <button class="btn-primary" onclick="resetToDefault()">
+                    Reset to Default
+                </button>
             </div>
         </div>
     `;
 }
 
 function setupSettingsListeners() {
-    // Theme setting
-    const themeSetting = document.getElementById('themeSetting');
-    if (themeSetting) {
-        themeSetting.addEventListener('change', (e) => {
-            applyTheme(e.target.value);
-        });
+    
+}
+
+function toggleParticles() {
+    state.settings.particles = !state.settings.particles;
+    saveSettings();
+}
+
+function toggleAdBlocker() {
+    state.settings.adBlocker = !state.settings.adBlocker;
+    saveSettings();
+}
+
+function toggleScramjetProxy() {
+    state.settings.useScramjetProxy = !state.settings.useScramjetProxy;
+    saveSettings();
+    showNotification(`Scramjet Proxy ${state.settings.useScramjetProxy ? 'enabled' : 'disabled'}`, 'success');
+    
+    // Reload current page if browsing to apply new proxy setting
+    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+    if (activeTab && !activeTab.url.startsWith('whipped://')) {
+        loadTabContent(activeTab.url);
     }
     
-    // Particles toggle
-    const particlesToggle = document.getElementById('particlesToggle');
-    if (particlesToggle) {
-        particlesToggle.addEventListener('click', () => {
-            state.settings.particles = !state.settings.particles;
-            particlesToggle.classList.toggle('active');
-            saveSettings();
-        });
-    }
+    loadTabContent('whipped://settings');
+}
+
+function setSearchEngine(engine) {
+    state.settings.searchEngine = engine;
+    saveSettings();
+    loadTabContent('whipped://settings');
+    showNotification(`Search engine set to ${engine}`, 'success');
+}
+
+function setStartupPage(page) {
+    state.settings.startupPage = page;
+    saveSettings();
+    loadTabContent('whipped://settings');
+    showNotification('Startup page updated', 'success');
+}
+
+function toggleDropdown(id) {
+    const dropdown = document.getElementById(id);
+    const menu = dropdown.querySelector('.dropdown-menu');
+    const button = dropdown.querySelector('.dropdown-button');
     
-    // Ad blocker toggle
-    const adBlockerToggle = document.getElementById('adBlockerToggle');
-    if (adBlockerToggle) {
-        adBlockerToggle.addEventListener('click', () => {
-            state.settings.adBlocker = !state.settings.adBlocker;
-            adBlockerToggle.classList.toggle('active');
-            saveSettings();
-            initializeAdBlocker();
-        });
-    }
-    
-    // Search engine setting
-    const searchEngineSetting = document.getElementById('searchEngineSetting');
-    if (searchEngineSetting) {
-        searchEngineSetting.addEventListener('change', (e) => {
-            state.settings.searchEngine = e.target.value;
-            saveSettings();
-        });
-    }
-    
-    // Startup page setting
-    const startupPageSetting = document.getElementById('startupPageSetting');
-    if (startupPageSetting) {
-        startupPageSetting.addEventListener('change', (e) => {
-            state.settings.startupPage = e.target.value;
-            saveSettings();
-        });
-    }
-    
-    // Clear buttons
-    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-    if (clearHistoryBtn) {
-        clearHistoryBtn.addEventListener('click', () => {
-            if (confirm('are you sure you want to clear all history?')) {
-                state.history = [];
-                saveHistory();
-                showNotification('history cleared!', 'success');
-            }
-        });
-    }
-    
-    const clearBookmarksBtn = document.getElementById('clearBookmarksBtn');
-    if (clearBookmarksBtn) {
-        clearBookmarksBtn.addEventListener('click', () => {
-            if (confirm('are you sure you want to clear all bookmarks?')) {
-                state.bookmarks = [];
-                saveBookmarks();
-                showNotification('bookmarks cleared!', 'success');
-            }
-        });
-    }
-    
-    const clearAllBtn = document.getElementById('clearAllBtn');
-    if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', () => {
-            if (confirm('are you sure you want to clear all browser data? this cannot be undone.')) {
-                state.history = [];
-                state.bookmarks = [];
-                state.installedExtensions = [];
-                localStorage.clear();
-                saveSettings();
-                showNotification('all data cleared!', 'success');
-                location.reload();
-            }
-        });
+    menu.classList.toggle('show');
+    button.classList.toggle('active');
+}
+
+function resetToDefault() {
+    if (confirm('Are you sure you want to reset all settings to default?')) {
+        state.settings = {
+            theme: 'lavender',
+            particles: true,
+            particleDensity: 0.2,
+            searchEngine: 'google',
+            startupPage: 'whipped://newtab',
+            cursor: 'default',
+            adBlocker: true,
+            tabCloaker: null,
+            useScramjetProxy: true
+        };
+        saveSettings();
+        applyTheme('lavender');
+        setCursor('default');
+        showNotification('Settings reset to default', 'success');
+        loadTabContent('whipped://settings');
     }
 }
 
 // ===================================
-// EXTENSIONS STORE - ADVANCED
+// EXTENSIONS
 // ===================================
 
-function initializeExtensionStore() {
-    // Extensions store is initialized with state data
-}
-
-function renderExtensionStore(category = 'all', search = '') {
-    const grid = document.getElementById('extensionsStoreGrid');
-    if (!grid) return;
+function renderExtensionsPage() {
+    let extensionsHTML = `
+        <div class="extensions-store">
+            <div class="store-categories">
+                <button class="category-btn active" data-category="all" onclick="filterExtensions('all')">All</button>
+                <button class="category-btn" data-category="productivity" onclick="filterExtensions('productivity')">Productivity</button>
+                <button class="category-btn" data-category="privacy" onclick="filterExtensions('privacy')">Privacy</button>
+                <button class="category-btn" data-category="themes" onclick="filterExtensions('themes')">Themes</button>
+                <button class="category-btn" data-category="fun" onclick="filterExtensions('fun')">Fun</button>
+            </div>
+            <div class="store-search">
+                <input type="text" id="storeSearch" placeholder="search extensions..." onkeyup="searchExtensions()">
+            </div>
+            <div class="extensions-grid" id="extensionsStoreGrid">
+    `;
     
-    let extensions = state.extensionStore;
-    
-    // Filter by category
-    if (category !== 'all') {
-        extensions = extensions.filter(ext => ext.category === category);
-    }
-    
-    // Filter by search
-    if (search) {
-        extensions = extensions.filter(ext => 
-            ext.name.toLowerCase().includes(search.toLowerCase()) ||
-            ext.description.toLowerCase().includes(search.toLowerCase())
-        );
-    }
-    
-    const extensionsHTML = extensions.map(ext => `
-        <div class="store-extension-card" onclick="installExtension('${ext.id}')">
-            <div class="extension-header">
-                <div class="extension-icon">
-                    <i class="${ext.icon}"></i>
+    state.extensionStore.forEach(ext => {
+        const installed = state.installedExtensions.find(e => e.id === ext.id);
+        extensionsHTML += `
+            <div class="store-extension-card" data-category="${ext.category}">
+                <div class="extension-header">
+                    <div class="extension-icon">
+                        <i class="${ext.icon}"></i>
+                    </div>
+                    <div class="extension-info">
+                        <h3>${ext.name}</h3>
+                        <p>v${ext.version}</p>
+                    </div>
                 </div>
-                <div class="extension-info">
-                    <h3>${ext.name}</h3>
-                    <p>v${ext.version} • ⭐ ${ext.rating} • 📥 ${ext.downloads}</p>
+                <div class="extension-description">${ext.description}</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <span class="extension-category">${ext.category}</span>
+                    <span style="color: white; font-size: 11px; opacity: 0.7;">⭐ ${ext.rating}</span>
+                </div>
+                <div class="extension-actions">
+                    ${installed ? 
+                        `<button onclick="uninstallExtension('${ext.id}')">Uninstall</button>` :
+                        `<button onclick="installExtension('${ext.id}', '${ext.name}')">Install</button>`
+                    }
                 </div>
             </div>
-            <div class="extension-description">${ext.description}</div>
-            <div class="extension-category">${ext.category}</div>
-            <button class="btn-primary install-btn">
-                <i class="fas fa-plus"></i> install
-            </button>
-        </div>
-    `).join('');
+        `;
+    });
     
-    grid.innerHTML = extensionsHTML || '<div class="empty-state"><i class="fas fa-puzzle-piece"></i><h3>no extensions found</h3><p>try a different search or category</p></div>';
+    extensionsHTML += '</div></div>';
+    return extensionsHTML;
 }
 
-function installExtension(extensionId) {
-    const extension = state.extensionStore.find(e => e.id === extensionId);
-    if (extension && !state.installedExtensions.find(e => e.id === extensionId)) {
-        state.installedExtensions.push(extension);
+function setupExtensionsListeners() {
+    
+}
+
+function filterExtensions(category) {
+    const cards = document.querySelectorAll('.store-extension-card');
+    const buttons = document.querySelectorAll('.category-btn');
+    
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    cards.forEach(card => {
+        if (category === 'all' || card.dataset.category === category) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function searchExtensions() {
+    const searchTerm = document.getElementById('storeSearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.store-extension-card');
+    
+    cards.forEach(card => {
+        const title = card.querySelector('h3').textContent.toLowerCase();
+        if (title.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function installExtension(id, name) {
+    if (!state.installedExtensions.find(e => e.id === id)) {
+        state.installedExtensions.push({ id, name });
         saveExtensions();
-        showNotification(`${extension.name} installed successfully!`, 'success');
-        
-        // Activate extension features
-        activateExtension(extension);
-    } else if (state.installedExtensions.find(e => e.id === extensionId)) {
-        showNotification('extension already installed', 'info');
+        showNotification(`${name} installed successfully`, 'success');
+        loadTabContent('whipped://extensions');
     }
 }
 
-function activateExtension(extension) {
-    switch (extension.id) {
-        case 'theme-changer':
-            // Theme changer is already integrated
-            break;
-        case 'night-mode':
-            applyTheme('midnight');
-            break;
-        case 'speed-boost':
-            // Speed boost is always active
-            break;
-        case 'video-downloader':
-            // Add video download functionality
-            addVideoDownloader();
-            break;
-        case 'password-manager':
-            // Add password manager functionality
-            addPasswordManager();
-            break;
-        case 'vpn-proxy':
-            // Add VPN functionality
-            addVPN();
-            break;
-    }
+function uninstallExtension(id) {
+    state.installedExtensions = state.installedExtensions.filter(e => e.id !== id);
+    saveExtensions();
+    showNotification('Extension uninstalled', 'info');
+    loadTabContent('whipped://extensions');
 }
 
-function addVideoDownloader() {
-    // Add video download button to pages
-    const style = document.createElement('style');
-    style.textContent = `
-        .video-download-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--lavender-dark);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 10000;
-            display: none;
-        }
-        
-        .video-download-btn:hover {
-            background: var(--lavender-darker);
-        }
-    `;
-    document.head.appendChild(style);
+function initializeExtensionStore() {
     
-    // Video detection logic would go here
-    console.log('video downloader activated');
-}
-
-function addPasswordManager() {
-    // Add password manager functionality
-    console.log('password manager activated');
-}
-
-function addVPN() {
-    // Add VPN functionality
-    console.log('vpn activated');
 }
 
 // ===================================
-// NOTIFICATION SYSTEM
+// PROFILES
+// ===================================
+
+function loadProfile() {
+    const profileData = localStorage.getItem('currentProfile');
+    if (profileData) {
+        state.currentProfile = JSON.parse(profileData);
+    } else {
+        state.currentProfile = state.profiles[0];
+        saveProfile();
+    }
+}
+
+function saveProfile() {
+    localStorage.setItem('currentProfile', JSON.stringify(state.currentProfile));
+}
+
+function switchProfile(profileId) {
+    const profile = state.profiles.find(p => p.id === profileId);
+    if (profile) {
+        state.currentProfile = profile;
+        saveProfile();
+        state.tabs = [];
+        createNewTab();
+        showNotification(`Switched to ${profile.name} profile`, 'info');
+    }
+}
+
+// ===================================
+// STORAGE
+// ===================================
+
+function saveSettings() {
+    localStorage.setItem('settings', JSON.stringify(state.settings));
+}
+
+function loadSettings() {
+    const settings = localStorage.getItem('settings');
+    if (settings) {
+        state.settings = JSON.parse(settings);
+    }
+}
+
+function saveBookmarks() {
+    if (!state.currentProfile?.isIncognito) {
+        localStorage.setItem(`bookmarks_${state.currentProfile?.id || 'default'}`, JSON.stringify(state.bookmarks));
+    }
+}
+
+function loadBookmarks() {
+    const bookmarks = localStorage.getItem(`bookmarks_${state.currentProfile?.id || 'default'}`);
+    if (bookmarks) {
+        state.bookmarks = JSON.parse(bookmarks);
+    }
+}
+
+function saveHistory() {
+    if (!state.currentProfile?.isIncognito) {
+        localStorage.setItem(`history_${state.currentProfile?.id || 'default'}`, JSON.stringify(state.history));
+    }
+}
+
+function loadHistory() {
+    if (!state.currentProfile?.isIncognito) {
+        const history = localStorage.getItem(`history_${state.currentProfile?.id || 'default'}`);
+        if (history) {
+            state.history = JSON.parse(history);
+        }
+    }
+}
+
+function saveExtensions() {
+    localStorage.setItem('extensions', JSON.stringify(state.installedExtensions));
+}
+
+function loadExtensions() {
+    const extensions = localStorage.getItem('extensions');
+    if (extensions) {
+        state.installedExtensions = JSON.parse(extensions);
+    }
+}
+
+// ===================================
+// NOTIFICATIONS
 // ===================================
 
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}"></i>
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'xmark' : 'info'}"></i>
         <span>${message}</span>
     `;
-    
     document.body.appendChild(notification);
     
     setTimeout(() => {
@@ -1087,390 +1225,46 @@ function showNotification(message, type = 'info') {
 }
 
 // ===================================
-// EXTENSIONS PAGE - ENHANCED
-// ===================================
-
-function renderExtensionsPage() {
-    const installedHTML = state.installedExtensions.map(ext => `
-        <div class="extension-card">
-            <div class="extension-header">
-                <div class="extension-icon">
-                    <i class="${ext.icon}"></i>
-                </div>
-                <div class="extension-info">
-                    <h3>${ext.name.toLowerCase()}</h3>
-                    <p>v${ext.version} • ⭐ ${ext.rating}</p>
-                </div>
-            </div>
-            <div class="extension-description">${ext.description.toLowerCase()}</div>
-            <div class="extension-actions">
-                <button class="btn-primary" onclick="removeExtension('${ext.id}')">
-                    <i class="fas fa-trash"></i> remove
-                </button>
-            </div>
-        </div>
-    `).join('');
-    
-    return `
-        <div class="page-content extensions-page">
-            <div class="extensions-header">
-                <h1><i class="fas fa-puzzle-piece"></i> extensions</h1>
-                <button class="btn-primary" onclick="openExtensionsStore()">
-                    <i class="fas fa-store"></i> extensions store
-                </button>
-            </div>
-            
-            <div class="extensions-grid">
-                ${installedHTML || '<div class="empty-state"><i class="fas fa-puzzle-piece"></i><h3>no extensions installed</h3><p>visit the extensions store to add functionality</p></div>'}
-            </div>
-        </div>
-    `;
-}
-
-function removeExtension(extensionId) {
-    const extension = state.installedExtensions.find(e => e.id === extensionId);
-    if (extension) {
-        state.installedExtensions = state.installedExtensions.filter(e => e.id !== extensionId);
-        saveExtensions();
-        showNotification(`${extension.name} removed`, 'info');
-        loadTabContent('whipped://extensions');
-    }
-}
-
-// ===================================
-// BOOKMARKS PAGE - ENHANCED
-// ===================================
-
-function renderBookmarksPage() {
-    const bookmarksHTML = state.bookmarks.map(bookmark => `
-        <div class="bookmark-item" onclick="navigateToBookmark('${bookmark.url}')">
-            <i class="fas fa-bookmark bookmark-favicon"></i>
-            <div class="bookmark-info">
-                <div class="bookmark-title">${bookmark.title.toLowerCase()}</div>
-                <div class="bookmark-url">${bookmark.url.toLowerCase()}</div>
-            </div>
-            <button class="bookmark-delete" onclick="event.stopPropagation(); deleteBookmark('${bookmark.id}')">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    `).join('');
-    
-    return `
-        <div class="page-content bookmarks-page">
-            <div class="bookmarks-header">
-                <h1><i class="fas fa-bookmark"></i> bookmarks</h1>
-                <button class="btn-primary" onclick="openBookmarkModal()">
-                    <i class="fas fa-plus"></i> add bookmark
-                </button>
-            </div>
-            
-            <div class="bookmarks-list">
-                ${bookmarksHTML || '<div class="empty-state"><i class="fas fa-bookmark"></i><h3>no bookmarks</h3><p>start bookmarking your favorite sites</p></div>'}
-            </div>
-        </div>
-    `;
-}
-
-// ===================================
-// HISTORY PAGE - ENHANCED
-// ===================================
-
-function renderHistoryPage() {
-    const historyHTML = state.history.slice().reverse().map(item => {
-        const date = new Date(item.timestamp);
-        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        
-        return `
-            <div class="history-item" onclick="navigateToHistory('${item.url}')">
-                <div class="history-time">${timeStr}</div>
-                <div class="history-info">
-                    <div class="history-title">${item.title.toLowerCase()}</div>
-                    <div class="history-url">${item.url.toLowerCase()}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    return `
-        <div class="page-content history-page">
-            <div class="history-header">
-                <h1><i class="fas fa-clock-rotate-left"></i> history</h1>
-                <button class="btn-secondary" onclick="clearAllHistory()">
-                    <i class="fas fa-trash"></i> clear all
-                </button>
-            </div>
-            
-            <div class="history-list">
-                ${historyHTML || '<div class="empty-state"><i class="fas fa-clock-rotate-left"></i><h3>no history</h3><p>your browsing history will appear here</p></div>'}
-            </div>
-        </div>
-    `;
-}
-
-// ===================================
-// SEARCH & NAVIGATION - ENHANCED
-// ===================================
-
-function handleSearch(query) {
-    if (!query.trim()) return;
-    
-    // Check if it's a URL
-    if (query.includes('.') && !query.includes(' ')) {
-        let url = query;
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            url = 'https://' + url;
-        }
-        loadTabContent(url);
-    } else {
-        // Search query
-        const searchEngines = {
-            google: 'https://www.google.com/search?q=',
-            duckduckgo: 'https://duckduckgo.com/?q=',
-            bing: 'https://www.bing.com/search?q=',
-            yahoo: 'https://search.yahoo.com/search?p=',
-            ecosia: 'https://www.ecosia.org/search?q='
-        };
-        
-        const searchUrl = searchEngines[state.settings.searchEngine] + encodeURIComponent(query);
-        loadTabContent(searchUrl);
-    }
-}
-
-// ===================================
-// WHIPGPT AI ASSISTANT - ENHANCED
-// ===================================
-
-async function sendWhipGPTMessage(message) {
-    const chatContainer = document.getElementById('chatContainer');
-    
-    // Remove welcome message if present
-    const welcome = chatContainer.querySelector('.chat-welcome');
-    if (welcome) {
-        welcome.remove();
-    }
-    
-    // Add user message
-    const userMessage = document.createElement('div');
-    userMessage.className = 'chat-message user';
-    userMessage.innerHTML = `<div class="chat-bubble">${escapeHtml(message)}</div>`;
-    chatContainer.appendChild(userMessage);
-    
-    // Add loading message
-    const loadingMessage = document.createElement('div');
-    loadingMessage.className = 'chat-message assistant';
-    loadingMessage.innerHTML = `<div class="chat-bubble"><div class="loading-spinner"></div></div>`;
-    chatContainer.appendChild(loadingMessage);
-    
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-    
-    try {
-        const response = await fetch(`${CONFIG.GEMINI_API_URL}?key=${CONFIG.GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: message
-                    }]
-                }]
-            })
-        });
-        
-        const data = await response.json();
-        
-        // Remove loading message
-        loadingMessage.remove();
-        
-        // Add AI response
-        const aiMessage = document.createElement('div');
-        aiMessage.className = 'chat-message assistant';
-        
-        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            const aiText = data.candidates[0].content.parts[0].text;
-            aiMessage.innerHTML = `<div class="chat-bubble">${escapeHtml(aiText)}</div>`;
-        } else {
-            aiMessage.innerHTML = `<div class="chat-bubble">sorry, i couldn't process that request.</div>`;
-        }
-        
-        chatContainer.appendChild(aiMessage);
-    } catch (error) {
-        console.error('whipgpt error:', error);
-        loadingMessage.remove();
-        
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'chat-message assistant';
-        errorMessage.innerHTML = `<div class="chat-bubble">sorry, i encountered an error. please try again.</div>`;
-        chatContainer.appendChild(errorMessage);
-    }
-    
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// ===================================
-// MODAL MANAGEMENT - ENHANCED
-// ===================================
-
-function openExtensionsStore() {
-    document.getElementById('extensionsModal').classList.add('active');
-    renderExtensionStore();
-}
-
-function openThemeChanger() {
-    document.getElementById('themeChangerModal').classList.add('active');
-}
-
-function openCursorModal() {
-    document.getElementById('cursorModal').classList.add('active');
-}
-
-// ===================================
-// DATA PERSISTENCE - ENHANCED
-// ===================================
-
-function loadSettings() {
-    const saved = localStorage.getItem('whipped_settings');
-    if (saved) {
-        state.settings = { ...state.settings, ...JSON.parse(saved) };
-    }
-}
-
-function saveSettings() {
-    localStorage.setItem('whipped_settings', JSON.stringify(state.settings));
-}
-
-function loadProfile() {
-    const saved = localStorage.getItem('whipped_profile');
-    if (saved) {
-        state.currentProfile = JSON.parse(saved);
-    } else {
-        state.currentProfile = {
-            id: 'default',
-            name: 'personal',
-            theme: 'lavender',
-            isIncognito: false
-        };
-        saveProfile();
-    }
-}
-
-function saveProfile() {
-    localStorage.setItem('whipped_profile', JSON.stringify(state.currentProfile));
-}
-
-function loadBookmarks() {
-    const saved = localStorage.getItem('whipped_bookmarks');
-    if (saved) {
-        state.bookmarks = JSON.parse(saved);
-    }
-}
-
-function saveBookmarks() {
-    localStorage.setItem('whipped_bookmarks', JSON.stringify(state.bookmarks));
-}
-
-function loadHistory() {
-    const saved = localStorage.getItem('whipped_history');
-    if (saved) {
-        state.history = JSON.parse(saved);
-    }
-}
-
-function saveHistory() {
-    localStorage.setItem('whipped_history', JSON.stringify(state.history));
-}
-
-function loadExtensions() {
-    const saved = localStorage.getItem('whipped_extensions');
-    if (saved) {
-        state.installedExtensions = JSON.parse(saved);
-    }
-}
-
-function saveExtensions() {
-    localStorage.setItem('whipped_extensions', JSON.stringify(state.installedExtensions));
-}
-
-function addToHistory(url, title) {
-    if (url.startsWith('whipped://')) return;
-    
-    state.history.push({
-        id: `history-${Date.now()}`,
-        url: url,
-        title: title,
-        timestamp: Date.now()
-    });
-    
-    // Keep only last 100 items
-    if (state.history.length > 100) {
-        state.history = state.history.slice(-100);
-    }
-    
-    saveHistory();
-}
-
-// ===================================
-// EVENT LISTENERS - ENHANCED
+// EVENT LISTENERS
 // ===================================
 
 function setupEventListeners() {
-    // New tab button
-    document.getElementById('newTabBtn').addEventListener('click', () => {
-        createNewTab();
-    });
+    // Tab controls
+    document.getElementById('newTabBtn').addEventListener('click', () => createNewTab());
     
-    // Navigation buttons
-    document.getElementById('backBtn').addEventListener('click', () => {
-        window.history.back();
-    });
+    // Navigation controls
+    document.getElementById('backBtn').addEventListener('click', goBack);
+    document.getElementById('forwardBtn').addEventListener('click', goForward);
+    document.getElementById('refreshBtn').addEventListener('click', refreshPage);
     
-    document.getElementById('forwardBtn').addEventListener('click', () => {
-        window.history.forward();
-    });
-    
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-        const activeTab = state.tabs.find(t => t.id === state.activeTabId);
-        if (activeTab) {
-            loadTabContent(activeTab.url);
-        }
-    });
-    
-    // Search functionality
-    const addressInput = document.getElementById('addressInput');
-    addressInput.addEventListener('keypress', (e) => {
+    // Address bar
+    document.getElementById('addressInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            handleSearch(addressInput.value);
+            handleSearch(document.getElementById('addressInput').value);
         }
     });
     
-    const searchBtn = document.getElementById('searchBtn');
-    searchBtn.addEventListener('click', () => {
-        handleSearch(addressInput.value);
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        handleSearch(document.getElementById('addressInput').value);
     });
     
-    // Control buttons
+    // Modal controls
     document.getElementById('tabCloakerBtn').addEventListener('click', () => {
         document.getElementById('tabCloakerModal').classList.add('active');
     });
     
     document.getElementById('bookmarkBtn').addEventListener('click', () => {
-        openBookmarkModal();
+        document.getElementById('bookmarkModal').classList.add('active');
     });
     
     document.getElementById('aiBtn').addEventListener('click', () => {
         document.getElementById('whipgptModal').classList.add('active');
-        document.getElementById('chatInput').focus();
     });
     
     document.getElementById('extensionsBtn').addEventListener('click', () => {
+        document.getElementById('extensionsModal').classList.add('active');
         loadTabContent('whipped://extensions');
+        document.getElementById('extensionsModal').classList.add('active');
     });
     
     document.getElementById('settingsBtn').addEventListener('click', () => {
@@ -1479,20 +1273,11 @@ function setupEventListeners() {
     
     document.getElementById('profileBtn').addEventListener('click', () => {
         document.getElementById('profileModal').classList.add('active');
-        renderProfiles();
     });
     
-    // Modal close buttons
+    // Close modals
     document.getElementById('closeTabCloaker').addEventListener('click', () => {
         document.getElementById('tabCloakerModal').classList.remove('active');
-    });
-    
-    document.getElementById('closeWhipGPT').addEventListener('click', () => {
-        document.getElementById('whipgptModal').classList.remove('active');
-    });
-    
-    document.getElementById('closeProfile').addEventListener('click', () => {
-        document.getElementById('profileModal').classList.remove('active');
     });
     
     document.getElementById('closeBookmark').addEventListener('click', () => {
@@ -1511,76 +1296,28 @@ function setupEventListeners() {
         document.getElementById('cursorModal').classList.remove('active');
     });
     
-    // WhipGPT chat
-    document.getElementById('sendChatBtn').addEventListener('click', () => {
-        const input = document.getElementById('chatInput');
-        if (input.value.trim()) {
-            sendWhipGPTMessage(input.value);
-            input.value = '';
-        }
+    document.getElementById('closeWhipGPT').addEventListener('click', () => {
+        document.getElementById('whipgptModal').classList.remove('active');
     });
     
-    document.getElementById('chatInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const input = document.getElementById('chatInput');
-            if (input.value.trim()) {
-                sendWhipGPTMessage(input.value);
-                input.value = '';
-            }
-        }
+    document.getElementById('closeProfile').addEventListener('click', () => {
+        document.getElementById('profileModal').classList.remove('active');
     });
     
-    // Extensions store
-    const storeSearch = document.getElementById('storeSearch');
-    if (storeSearch) {
-        storeSearch.addEventListener('input', (e) => {
-            const category = document.querySelector('.category-btn.active')?.dataset.category || 'all';
-            renderExtensionStore(category, e.target.value);
-        });
-    }
-    
-    // Category buttons
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('category-btn')) {
-            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
-            e.target.classList.add('active');
-            renderExtensionStore(e.target.dataset.category);
-        }
-    });
-    
-    // Save bookmark
+    // Bookmark form
     document.getElementById('saveBookmarkBtn').addEventListener('click', () => {
         const title = document.getElementById('bookmarkTitle').value;
         const url = document.getElementById('bookmarkUrl').value;
-        
         if (title && url) {
-            state.bookmarks.push({
-                id: `bookmark-${Date.now()}`,
-                title: title,
-                url: url,
-                timestamp: Date.now()
-            });
-            saveBookmarks();
+            addBookmark(title, url);
+            document.getElementById('bookmarkTitle').value = '';
+            document.getElementById('bookmarkUrl').value = '';
             document.getElementById('bookmarkModal').classList.remove('active');
-            showNotification('bookmark saved!', 'success');
-            
-            // Refresh if on bookmarks page
-            const activeTab = state.tabs.find(t => t.id === state.activeTabId);
-            if (activeTab?.url === 'whipped://bookmarks') {
-                loadTabContent('whipped://bookmarks');
-            }
+            showNotification('Bookmark saved', 'success');
         }
     });
     
-    // Add profile button
-    document.getElementById('addProfileBtn').addEventListener('click', () => {
-        const name = prompt('enter profile name:');
-        if (name) {
-            showNotification('profile creation coming soon!', 'info');
-        }
-    });
-    
-    // Close modals on background click
+    // Close modals on outside click
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
@@ -1589,84 +1326,3 @@ function setupEventListeners() {
         });
     });
 }
-
-// ===================================
-// UTILITY FUNCTIONS
-// ===================================
-
-function navigateToBookmark(url) {
-    loadTabContent(url);
-}
-
-function deleteBookmark(bookmarkId) {
-    if (confirm('delete this bookmark?')) {
-        state.bookmarks = state.bookmarks.filter(b => b.id !== bookmarkId);
-        saveBookmarks();
-        showNotification('bookmark deleted', 'info');
-        loadTabContent('whipped://bookmarks');
-    }
-}
-
-function navigateToHistory(url) {
-    loadTabContent(url);
-}
-
-function clearAllHistory() {
-    if (confirm('clear all browsing history?')) {
-        state.history = [];
-        saveHistory();
-        showNotification('history cleared', 'info');
-        loadTabContent('whipped://history');
-    }
-}
-
-function openBookmarkModal() {
-    const modal = document.getElementById('bookmarkModal');
-    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
-    
-    document.getElementById('bookmarkTitle').value = activeTab?.title || '';
-    document.getElementById('bookmarkUrl').value = activeTab?.url || '';
-    
-    modal.classList.add('active');
-}
-
-function renderProfiles() {
-    const profilesList = document.getElementById('profilesList');
-    
-    const profiles = [
-        { id: 'default', name: 'personal', theme: 'lavender', isIncognito: false },
-        { id: 'work', name: 'work', theme: 'midnight', isIncognito: false },
-        { id: 'incognito', name: 'incognito', theme: 'black', isIncognito: true }
-    ];
-    
-    profilesList.innerHTML = profiles.map(profile => `
-        <div class="profile-card ${profile.id === state.currentProfile?.id ? 'active' : ''}" onclick="switchProfile('${profile.id}')">
-            <div class="profile-avatar">${profile.name.charAt(0)}</div>
-            <div class="profile-name">${profile.name}</div>
-            <div class="profile-theme">${profile.theme} theme</div>
-        </div>
-    `).join('');
-}
-
-function switchProfile(profileId) {
-    showNotification('profile switching coming soon!', 'info');
-    document.getElementById('profileModal').classList.remove('active');
-}
-
-// Make functions globally accessible
-window.toggleExtension = toggleExtension;
-window.openWebStore = openWebStore;
-window.navigateToBookmark = navigateToBookmark;
-window.deleteBookmark = deleteBookmark;
-window.openBookmarkModal = openBookmarkModal;
-window.navigateToHistory = navigateToHistory;
-window.clearAllHistory = clearAllHistory;
-window.switchProfile = switchProfile;
-window.installExtension = installExtension;
-window.removeExtension = removeExtension;
-window.applyTabCloak = applyTabCloak;
-window.setCursor = setCursor;
-window.applyTheme = applyTheme;
-window.openExtensionsStore = openExtensionsStore;
-window.openThemeChanger = openThemeChanger;
-window.openCursorModal = openCursorModal;
