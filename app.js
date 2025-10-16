@@ -694,81 +694,81 @@ function loadWebPage(url) {
 function loadScramjetContentSeamlessly(proxiedUrl) {
     const iframe = document.getElementById('scramjet-iframe');
     
-    // Fetch the proxied content from Scramjet
-    fetch(proxiedUrl, {
-        method: 'GET',
-        mode: 'no-cors',
-        credentials: 'omit'
-    })
-    .then(response => response.text())
-    .catch(error => {
-        // If CORS blocks direct fetch, load via iframe and hide UI
-        console.log('Fetching through iframe method');
-        loadScramjetViaIframe(proxiedUrl, iframe);
-        return;
-    })
-    .then(html => {
-        if (!html) {
-            loadScramjetViaIframe(proxiedUrl, iframe);
-            return;
-        }
-        
-        // Extract content from Scramjet page and inject with UI-hiding CSS
-        const cleanHTML = createCleanScramjetContent(html);
-        iframe.srcdoc = cleanHTML;
-    })
-    .catch(() => {
-        // Fallback to direct iframe loading
-        loadScramjetViaIframe(proxiedUrl, iframe);
-    });
+    // Use iframe method directly - it's the most reliable for seamless loading
+    loadScramjetViaIframe(proxiedUrl, iframe);
 }
 
 function loadScramjetViaIframe(proxiedUrl, iframe) {
-    // Create a wrapper that loads Scramjet and hides its UI
-    const injectionScript = `
-        <script>
-            // Hide Scramjet UI elements when page loads
-            window.addEventListener('load', function() {
-                try {
-                    // Hide common Scramjet UI elements
-                    const elementsToHide = [
-                        document.querySelector('header'),
-                        document.querySelector('nav'),
-                        document.querySelector('.scramjet-header'),
-                        document.querySelector('.scramjet-nav'),
-                        document.querySelector('[class*="navbar"]'),
-                        document.querySelector('[class*="header"]')
-                    ];
-                    
-                    elementsToHide.forEach(el => {
-                        if (el) el.style.display = 'none';
-                    });
-                    
-                    // Find and maximize content area
-                    const contentAreas = [
-                        document.querySelector('[class*="content"]'),
-                        document.querySelector('[class*="main"]'),
-                        document.querySelector('[class*="body"]'),
-                        document.querySelector('main'),
-                        document.body
-                    ];
-                    
-                    contentAreas.forEach(el => {
-                        if (el && el !== document.body) {
-                            el.style.width = '100%';
-                            el.style.height = '100%';
-                            el.style.margin = '0';
-                            el.style.padding = '0';
-                        }
-                    });
-                } catch (e) {
-                    console.log('Scramjet UI adjustment: ', e);
+    // Create comprehensive wrapper HTML that hides Scramjet UI
+    const wrapperHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
                 }
-            });
-        </script>
+                html, body {
+                    width: 100%;
+                    height: 100%;
+                    overflow: hidden;
+                }
+                iframe {
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                    display: block;
+                }
+                /* Hide Scramjet UI Elements */
+                header, nav, footer, 
+                [class*="header"], [id*="header"],
+                [class*="navbar"], [id*="navbar"],
+                [class*="topbar"], [id*="topbar"],
+                [class*="toolbar"], [id*="toolbar"],
+                [class*="sidebar"], [id*="sidebar"],
+                [class*="nav"], [id*="nav"],
+                .scramjet-header, .scramjet-nav, .scramjet-ui,
+                #scramjet-ui, .proxy-header, .proxy-nav {
+                    display: none !important;
+                }
+                main, [class*="content"], [class*="main"] {
+                    width: 100% !important;
+                    height: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+            </style>
+        </head>
+        <body>
+            <iframe id="content-frame" src="${proxiedUrl}"></iframe>
+            <script>
+                // Additional hiding via JavaScript
+                function hideScramjetUI() {
+                    const frame = document.getElementById('content-frame');
+                    try {
+                        // Try to access frame content (may fail due to CORS)
+                        const frameDoc = frame.contentDocument || frame.contentWindow.document;
+                        if (frameDoc) {
+                            const toHide = frameDoc.querySelectorAll('header, nav, footer, [class*="header"], [class*="navbar"], [class*="nav"]');
+                            toHide.forEach(el => el.style.display = 'none');
+                        }
+                    } catch (e) {
+                        // CORS restricted, but CSS rules above will still apply
+                    }
+                }
+                
+                window.addEventListener('load', hideScramjetUI);
+                setTimeout(hideScramjetUI, 500);
+                setTimeout(hideScramjetUI, 1500);
+            </script>
+        </body>
+        </html>
     `;
     
-    iframe.srcdoc = injectionScript + '<iframe src="' + proxiedUrl + '" style="width:100%;height:100%;border:none;margin:0;padding:0;"></iframe>';
+    iframe.srcdoc = wrapperHTML;
 }
 
 function createCleanScramjetContent(html) {
