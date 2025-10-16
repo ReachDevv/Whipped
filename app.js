@@ -693,44 +693,7 @@ function loadWebPage(url) {
 
 function loadScramjetContentSeamlessly(proxiedUrl) {
     const iframe = document.getElementById('scramjet-iframe');
-    loadScramjetViaIframe(proxiedUrl, iframe);
-}
-
-function loadScramjetViaIframe(proxiedUrl, iframe) {
-    // Create wrapper that crops out the Scramjet UI from the top
-    const wrapperHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                * {
-                    margin: 0;
-                    padding: 0;
-                }
-                html, body {
-                    width: 100%;
-                    height: 100%;
-                    overflow: hidden;
-                }
-                #content-frame {
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    display: block;
-                    margin-top: -80px;
-                    margin-left: 0;
-                }
-            </style>
-        </head>
-        <body>
-            <iframe id="content-frame" src="${proxiedUrl}"></iframe>
-        </body>
-        </html>
-    `;
-    
-    iframe.srcdoc = wrapperHTML;
+    iframe.src = proxiedUrl;
 }
 
 function createCleanScramjetContent(html) {
