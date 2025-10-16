@@ -693,13 +693,11 @@ function loadWebPage(url) {
 
 function loadScramjetContentSeamlessly(proxiedUrl) {
     const iframe = document.getElementById('scramjet-iframe');
-    
-    // Use iframe method directly - it's the most reliable for seamless loading
     loadScramjetViaIframe(proxiedUrl, iframe);
 }
 
 function loadScramjetViaIframe(proxiedUrl, iframe) {
-    // Create comprehensive wrapper HTML that hides Scramjet UI
+    // Create wrapper that crops out the Scramjet UI from the top
     const wrapperHTML = `
         <!DOCTYPE html>
         <html>
@@ -716,54 +714,18 @@ function loadScramjetViaIframe(proxiedUrl, iframe) {
                     height: 100%;
                     overflow: hidden;
                 }
-                iframe {
+                #content-frame {
                     width: 100%;
                     height: 100%;
                     border: none;
                     display: block;
-                }
-                /* Hide Scramjet UI Elements */
-                header, nav, footer, 
-                [class*="header"], [id*="header"],
-                [class*="navbar"], [id*="navbar"],
-                [class*="topbar"], [id*="topbar"],
-                [class*="toolbar"], [id*="toolbar"],
-                [class*="sidebar"], [id*="sidebar"],
-                [class*="nav"], [id*="nav"],
-                .scramjet-header, .scramjet-nav, .scramjet-ui,
-                #scramjet-ui, .proxy-header, .proxy-nav {
-                    display: none !important;
-                }
-                main, [class*="content"], [class*="main"] {
-                    width: 100% !important;
-                    height: 100% !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
+                    margin-top: -80px;
+                    margin-left: 0;
                 }
             </style>
         </head>
         <body>
             <iframe id="content-frame" src="${proxiedUrl}"></iframe>
-            <script>
-                // Additional hiding via JavaScript
-                function hideScramjetUI() {
-                    const frame = document.getElementById('content-frame');
-                    try {
-                        // Try to access frame content (may fail due to CORS)
-                        const frameDoc = frame.contentDocument || frame.contentWindow.document;
-                        if (frameDoc) {
-                            const toHide = frameDoc.querySelectorAll('header, nav, footer, [class*="header"], [class*="navbar"], [class*="nav"]');
-                            toHide.forEach(el => el.style.display = 'none');
-                        }
-                    } catch (e) {
-                        // CORS restricted, but CSS rules above will still apply
-                    }
-                }
-                
-                window.addEventListener('load', hideScramjetUI);
-                setTimeout(hideScramjetUI, 500);
-                setTimeout(hideScramjetUI, 1500);
-            </script>
         </body>
         </html>
     `;
